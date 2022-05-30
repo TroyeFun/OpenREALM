@@ -9,5 +9,6 @@ xhost +
 docker run -it --rm --privileged \
     -v `pwd`:/home/root/src:rw \
     -v /tmp/.X11-unix:/tmp/.X11-unix:ro \
+    --network host \
     -e DISPLAY=:0 \
-    --name=openrealm_docker $option openrealm:latest
+    --name=openrealm_base $option troyefun/openrealm:reinstall_openvslam

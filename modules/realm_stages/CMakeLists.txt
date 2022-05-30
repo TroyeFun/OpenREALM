@@ -9,6 +9,40 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 # Dependencies
 ################################################################################
 
+# Check BoW Framework
+set(BOW_FRAMEWORK "FBoW" CACHE STRING "DBoW2 or FBoW") 
+set_property(CACHE BOW_FRAMEWORK PROPERTY STRINGS "DBoW2" "FBoW") 
+if(BOW_FRAMEWORK MATCHES "DBoW2") 
+    find_package(DBoW2 REQUIRED) 
+elseif(BOW_FRAMEWORK MATCHES "FBoW") 
+    find_package(fbow QUIET) 
+    if(NOT fbow_FOUND) 
+        add_subdirectory(${PROJECT_SOURCE_DIR}/3rd/FBoW ${PROJECT_BINARY_DIR}/3rd/FBoW) 
+    endif() 
+else() 
+    message(FATAL_ERROR "Invalid BoW framework: ${BOW_FRAMEWORK}") 
+endif()
+
+if(BOW_FRAMEWORK MATCHES "DBoW2")
+    set(BoW_LIBRARY ${DBoW2_LIBS})
+    target_compile_definitions(${PROJECT_NAME} PUBLIC USE_DBOW2)
+    message(STATUS "BoW framework: ${BOW_FRAMEWORK} (found in ${DBoW2_INCLUDE_DIRS})")
+elseif(BOW_FRAMEWORK MATCHES "FBoW")
+    if(fbow_FOUND)
+        set(BoW_LIBRARY ${fbow_LIBS})
+        message(STATUS "BoW framework: ${BOW_FRAMEWORK} (found in ${fbow_INCLUDE_DIRS})")
+    else()
+        target_include_directories(${PROJECT_NAME}
+                                PUBLIC
+                                $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/3rd/FBoW/include>
+                                $<INSTALL_INTERFACE:include/fbow>)
+        set(BoW_LIBRARY fbow)
+        message(STATUS "BoW framework: ${BOW_FRAMEWORK} (Using submodule)")
+    endif()
+else()
+    message(FATAL_ERROR "Invalid BoW framework: ${BOW_FRAMEWORK}")
+endif()
+
 
 # Fix to avoid OpenCV package confusion with ROS melodic
 find_package(OpenCV 3.3.1 EXACT QUIET)
