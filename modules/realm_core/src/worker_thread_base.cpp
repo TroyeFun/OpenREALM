@@ -25,6 +25,7 @@ WorkerThreadBase::WorkerThreadBase(const std::string &thread_name, int64_t sleep
 
 void WorkerThreadBase::start()
 {
+  LOG_F("Worker start!")
   startCallback();
   m_thread = std::thread(std::bind(&WorkerThreadBase::run, this));
 }

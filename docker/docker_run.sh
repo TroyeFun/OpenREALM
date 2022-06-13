@@ -11,4 +11,4 @@ docker run -it --rm --privileged \
     -v /tmp/.X11-unix:/tmp/.X11-unix:ro \
     --network host \
     -e DISPLAY=:0 \
-    --name=openrealm_base $option troyefun/openrealm:reinstall_openvslam
+    --name=openrealm_base $option troyefun/openrealm:latest

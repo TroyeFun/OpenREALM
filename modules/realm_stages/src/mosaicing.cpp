@@ -15,7 +15,7 @@ Mosaicing::Mosaicing(const StageSettings::Ptr &stage_set, double rate)
     : StageBase("mosaicing", (*stage_set)["path_output"].toString(), rate, (*stage_set)["queue_size"].toInt(), bool((*stage_set)["log_to_file"].toInt())),
       m_utm_reference(nullptr),
       m_global_map(nullptr),
-      //m_mesher(nullptr),
+      m_mesher(nullptr),
       m_gdal_writer(nullptr),
       m_publish_mesh_nth_iter(0),
       m_publish_mesh_every_nth_kf((*stage_set)["publish_mesh_every_nth_kf"].toInt()),
@@ -259,11 +259,11 @@ void Mosaicing::saveAll()
   // 3D Mesh output
   if (m_settings_save.save_elevation_mesh_one)
   {
-    //std::vector<cv::Point2i> vertex_ids = _mesher->buildMesh(*_global_map, "valid");
-    //if (_global_map->exists("elevation_normal"))
-    //  io::saveElevationMeshToPLY(*_global_map, vertex_ids, "elevation", "elevation_normal", "color_rgb", "valid", _stage_path + "/elevation/mesh", "elevation");
-    //else
-    //  io::saveElevationMeshToPLY(*_global_map, vertex_ids, "elevation", "", "color_rgb", "valid", _stage_path + "/elevation/mesh", "elevation");
+    std::vector<cv::Point2i> vertex_ids = m_mesher->buildMesh(*m_global_map, "valid");
+    if (m_global_map->exists("elevation_normal"))
+      io::saveElevationMeshToPLY(*m_global_map, vertex_ids, "elevation", "elevation_normal", "color_rgb", "valid", m_stage_path + "/elevation/mesh", "elevation");
+    else
+      io::saveElevationMeshToPLY(*m_global_map, vertex_ids, "elevation", "", "color_rgb", "valid", m_stage_path + "/elevation/mesh", "elevation");
   }
 }
 
@@ -287,8 +287,8 @@ void Mosaicing::finishCallback()
   saveAll();
 
   // Publish final mesh at the end
-  //if (m_do_publish_mesh_at_finish)
-  //  m_transport_mesh(createMeshFaces(m_global_map), "output/mesh");
+  if (m_do_publish_mesh_at_finish)
+    m_transport_mesh(createMeshFaces(m_global_map), "output/mesh");
 }
 
 void Mosaicing::runPostProcessing()
@@ -412,11 +412,11 @@ std::vector<Face> Mosaicing::createMeshFaces(const CvGridMap::Ptr &map)
     mesh_sampled = map;
   }
 
-  //std::vector<cv::Point2i> vertex_ids = _mesher->buildMesh(*mesh_sampled, "valid");
-  //std::vector<Face> faces = cvtToMesh((*mesh_sampled), "elevation", "color_rgb", vertex_ids);
-  //return faces;
+  std::vector<cv::Point2i> vertex_ids = m_mesher->buildMesh(*mesh_sampled, "valid");
+  std::vector<Face> faces = cvtToMesh((*mesh_sampled), "elevation", "color_rgb", vertex_ids);
+  return faces;
   // Placeholder return, there are a few calls that try to use this
-  return std::vector<Face>();
+  // return std::vector<Face>();
 }
 
 void Mosaicing::publish(const Frame::Ptr &frame, const CvGridMap::Ptr &map, const CvGridMap::Ptr &update, uint64_t timestamp)
@@ -432,7 +432,7 @@ void Mosaicing::publish(const Frame::Ptr &frame, const CvGridMap::Ptr &map, cons
                                                       cv::COLORMAP_JET), "output/elevation");
   m_transport_cvgridmap(m_global_map->getSubmap({"color_rgb"}), m_utm_reference->zone, m_utm_reference->band, "output/full/ortho");
   m_transport_cvgridmap(update->getSubmap({"color_rgb"}), m_utm_reference->zone, m_utm_reference->band, "output/update/ortho");
-  //_transport_cvgridmap(update->getSubmap({"elevation", "valid"}), _utm_reference->zone, _utm_reference->band, "output/update/elevation");
+  m_transport_cvgridmap(update->getSubmap({"elevation", "valid"}), m_utm_reference->zone, m_utm_reference->band, "output/update/elevation");
 
   if (m_publish_mesh_every_nth_kf > 0 && m_publish_mesh_every_nth_kf == m_publish_mesh_nth_iter)
   {

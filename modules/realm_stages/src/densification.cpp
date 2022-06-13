@@ -32,6 +32,8 @@ Densification::Densification(const StageSettings::Ptr &stage_set,
   // Creation of reference plane, currently only the one below is supported
   m_plane_ref.pt = (cv::Mat_<double>(3, 1) << 0.0, 0.0, 0.0);
   m_plane_ref.n = (cv::Mat_<double>(3, 1) << 0.0, 0.0, 1.0);
+
+  LOG_F(INFO, "Densification initialize");
 }
 
 void Densification::addFrame(const Frame::Ptr &frame)
@@ -67,6 +69,8 @@ void Densification::addFrame(const Frame::Ptr &frame)
 bool Densification::process()
 {
   // NOTE: All depthmap maps are CV_32F except they are explicitly casted
+
+  LOG_F(INFO, "densification running");
 
   // First check if buffer has enough frames already, else don't do anything
   if (m_buffer_reco.size() < m_n_frames)
@@ -125,7 +129,7 @@ bool Densification::process()
   // Last check if frame still has valid depthmap
   if (!frame_processed->getDepthmap())
   {
-    //_transport_frame(frame_processed, "output/frame");
+    m_transport_frame(frame_processed, "output/frame");
     return true;
   }
 
